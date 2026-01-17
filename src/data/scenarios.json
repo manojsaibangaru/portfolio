@@ -92,11 +92,22 @@
       "soar": {
         "platform": "Cortex XSOAR",
         "playbook": "Phishing Response - Credential Theft",
+        "integrations": ["Splunk SIEM", "CrowdStrike Falcon", "VirusTotal", "ServiceNow"],
         "automations": [
           {
+            "name": "Splunk Alert Ingestion",
+            "description": "Ingested phishing alert from Splunk SIEM via integration, triggering automated triage playbook",
+            "result": "Alert parsed, IOCs extracted, playbook initiated in <30 seconds"
+          },
+          {
             "name": "Auto-Enrichment",
-            "description": "Automatically enriched phishing URL via VirusTotal, URLscan.io, and internal threat intel",
+            "description": "Enriched phishing URL and sender domain via VirusTotal, URLscan.io, and threat intel feeds",
             "result": "URL flagged as malicious by 45/72 engines"
+          },
+          {
+            "name": "CrowdStrike Host Containment",
+            "description": "Triggered CrowdStrike Falcon API to isolate endpoint where credentials were submitted",
+            "result": "Host isolated within 2 minutes of detection"
           },
           {
             "name": "Email Quarantine",
@@ -107,11 +118,6 @@
             "name": "Ticket Creation",
             "description": "Auto-created incident ticket in ServiceNow with full timeline and evidence",
             "result": "INC0012847 created and assigned to SOC Tier 2"
-          },
-          {
-            "name": "User Notification",
-            "description": "Sent templated notification to affected users with next steps",
-            "result": "Notification sent to 12 recipients of phishing email"
           }
         ]
       },
@@ -252,26 +258,32 @@
       "soar": {
         "platform": "Cortex XSOAR",
         "playbook": "Malware Response - Macro-Enabled Document",
+        "integrations": ["Splunk SIEM", "CrowdStrike Falcon", "VirusTotal", "Hybrid Analysis"],
         "automations": [
           {
+            "name": "Splunk Alert Correlation",
+            "description": "Correlated EDR alert with Splunk SIEM logs to identify attack timeline and affected endpoints",
+            "result": "Full attack chain mapped from email delivery to execution attempt"
+          },
+          {
             "name": "Hash Reputation Check",
-            "description": "Submitted file hash to VirusTotal, Hybrid Analysis, and internal sandbox",
+            "description": "Submitted file hash to VirusTotal, Hybrid Analysis, and internal sandbox via XSOAR integrations",
             "result": "Identified as Emotet by 52/68 engines"
           },
           {
-            "name": "Domain Enrichment",
-            "description": "C2 domain checked against threat intel feeds",
-            "result": "Domain flagged in 4 threat intel feeds, hosting known malware"
+            "name": "CrowdStrike Endpoint Isolation",
+            "description": "Triggered CrowdStrike Falcon network containment via XSOAR integration",
+            "result": "Endpoint isolated in 45 seconds, preventing lateral movement"
+          },
+          {
+            "name": "IOC Blocking via CrowdStrike",
+            "description": "Pushed C2 domain and file hash to CrowdStrike IOC blocklist",
+            "result": "IOCs blocked across all managed endpoints"
           },
           {
             "name": "Email Search & Quarantine",
             "description": "Searched for email with matching attachment hash across all mailboxes",
             "result": "4 emails found, all quarantined"
-          },
-          {
-            "name": "Endpoint Forensics Collection",
-            "description": "Automatically collected browser history, recent files, and process list",
-            "result": "No additional IOCs found"
           }
         ]
       },
@@ -412,26 +424,32 @@
       "soar": {
         "platform": "Cortex XSOAR",
         "playbook": "Active Directory Compromise Response",
+        "integrations": ["Splunk SIEM", "CrowdStrike Falcon", "Active Directory", "ServiceNow"],
         "automations": [
           {
+            "name": "Splunk Lateral Movement Detection",
+            "description": "Ingested Splunk alert for anomalous service account authentication patterns",
+            "result": "Alert enriched with AD context, triggering compromise response playbook"
+          },
+          {
             "name": "Account Lockout",
-            "description": "Automatically disabled compromised accounts pending investigation",
-            "result": "svc_backup and jsmith accounts disabled"
+            "description": "Automatically disabled compromised accounts via Active Directory integration",
+            "result": "svc_backup and jsmith accounts disabled within 30 seconds"
           },
           {
-            "name": "Session Termination",
-            "description": "Revoked all Kerberos tickets for compromised accounts",
-            "result": "All active sessions terminated"
+            "name": "CrowdStrike Host Isolation",
+            "description": "Triggered network containment on source workstation via CrowdStrike Falcon API",
+            "result": "WKS-042 isolated within 2 minutes of confirmation"
           },
           {
-            "name": "Host Isolation",
-            "description": "Network isolated WKS-042 via EDR integration",
-            "result": "Host isolated within 2 minutes of confirmation"
+            "name": "Splunk Threat Hunt Query",
+            "description": "Executed automated Splunk SPL query to hunt for additional Kerberoasting activity",
+            "result": "No additional compromised hosts found across 500+ endpoints"
           },
           {
-            "name": "Threat Hunt Initiation",
-            "description": "Automatically launched hunt for additional Kerberoasting activity",
-            "result": "No additional compromised hosts found"
+            "name": "ServiceNow Case Creation",
+            "description": "Auto-created critical incident with full timeline, IOCs, and remediation steps",
+            "result": "INC0013542 created with severity P1, assigned to IR team"
           }
         ]
       },
@@ -579,25 +597,31 @@
       "soar": {
         "platform": "Cortex XSOAR",
         "playbook": "AWS IAM Compromise Response",
+        "integrations": ["Splunk SIEM", "AWS Security Hub", "CrowdStrike Falcon", "Slack"],
         "automations": [
           {
+            "name": "Splunk CloudTrail Ingestion",
+            "description": "Ingested AWS CloudTrail alert from Splunk SIEM, triggering cloud compromise playbook",
+            "result": "Alert enriched with user context and historical API patterns"
+          },
+          {
             "name": "Access Key Deactivation",
-            "description": "Automatically deactivated compromised access keys via AWS API",
-            "result": "Access key AKIA3XXX... deactivated"
+            "description": "Automatically deactivated compromised access keys via AWS IAM integration",
+            "result": "Access key AKIA3XXX... deactivated within 45 seconds"
           },
           {
             "name": "Policy Remediation",
-            "description": "Detached overly permissive policies from affected role",
+            "description": "Detached overly permissive policies from affected role via XSOAR automation",
             "result": "AdministratorAccess detached from DevTeamRole"
           },
           {
-            "name": "CloudTrail Analysis",
-            "description": "Retrieved and analyzed all API calls from compromised credentials",
+            "name": "Splunk CloudTrail Analysis",
+            "description": "Executed automated Splunk query to retrieve all API calls from compromised credentials",
             "result": "47 API calls identified, 12 to sensitive resources"
           },
           {
             "name": "Slack Notification",
-            "description": "Notified security team and development lead via Slack",
+            "description": "Notified security team and development lead via Slack integration",
             "result": "Incident channel created, stakeholders notified"
           }
         ]

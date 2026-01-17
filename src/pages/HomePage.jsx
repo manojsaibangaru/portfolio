@@ -116,9 +116,9 @@ export default function HomePage() {
                       SYSTEM ACTIVE
                     </span>
                     <span className="text-zinc-600">|</span>
-                    <span className="text-zinc-500">CLEARANCE: ANALYST</span>
+                    <span className="text-zinc-500">ROLE: XSOAR ENGINEER</span>
                     <span className="text-zinc-600">|</span>
-                    <span className="text-blue-400">SOC TIER II</span>
+                    <span className="text-blue-400">SOAR IMPLEMENTATION</span>
                   </div>
 
                   {/* Main headline with glitch */}
@@ -133,13 +133,13 @@ export default function HomePage() {
                   {/* Description - Terminal style */}
                   <div className="font-mono text-sm text-zinc-400 space-y-2">
                     <p>
-                      <span className="text-green-400">&gt;</span> Analyst: <span className="text-cyan-400">{profile.name}</span>
+                      <span className="text-green-400">&gt;</span> Engineer: <span className="text-cyan-400">{profile.name}</span>
                     </p>
                     <p>
-                      <span className="text-green-400">&gt;</span> Specialization: SIEM, SOAR, Threat Detection, Incident Response
+                      <span className="text-green-400">&gt;</span> Specialization: Cortex XSOAR, Splunk SIEM, CrowdStrike EDR, Security Automation
                     </p>
                     <p>
-                      <span className="text-green-400">&gt;</span> Status: <span className="text-green-400">Available for new operations</span>
+                      <span className="text-green-400">&gt;</span> Status: <span className="text-green-400">Available for new engagements</span>
                     </p>
                   </div>
 
@@ -170,12 +170,12 @@ export default function HomePage() {
                       <div className="text-xs text-zinc-500">YEARS_EXP</div>
                     </div>
                     <div>
-                      <div className="text-3xl text-cyan-400">500+</div>
-                      <div className="text-xs text-zinc-500">CASES_CLOSED</div>
+                      <div className="text-3xl text-cyan-400">50+</div>
+                      <div className="text-xs text-zinc-500">PLAYBOOKS_DEPLOYED</div>
                     </div>
                     <div>
-                      <div className="text-3xl text-yellow-400">50+</div>
-                      <div className="text-xs text-zinc-500">PLAYBOOKS</div>
+                      <div className="text-3xl text-yellow-400">10+</div>
+                      <div className="text-xs text-zinc-500">INTEGRATIONS_BUILT</div>
                     </div>
                   </div>
                 </div>
@@ -254,33 +254,33 @@ export default function HomePage() {
             <div className="mx-auto max-w-7xl px-6">
               <div className="font-mono mb-12">
                 <div className="text-cyan-400 mb-2">
-                  <span className="text-zinc-600">$</span> cat /etc/analyst/capabilities.conf
+                  <span className="text-zinc-600">$</span> cat /etc/xsoar/capabilities.conf
                 </div>
                 <h2 className="text-3xl font-bold text-white">
-                  THREAT <span className="text-cyan-400">DETECTION</span> STACK
+                  SECURITY <span className="text-cyan-400">AUTOMATION</span> STACK
                 </h2>
               </div>
 
               <div className="grid gap-6 md:grid-cols-4">
                 {[
                   { 
-                    label: 'SIEM', 
-                    items: ['Splunk', 'Wazuh', 'Kibana', 'Sentinel'],
+                    label: 'SOAR', 
+                    items: ['Cortex XSOAR', 'Playbook Design', 'Custom Integrations'],
                     color: 'green'
                   },
                   { 
-                    label: 'SOAR', 
-                    items: ['Cortex XSOAR', 'Phantom', 'Custom Playbooks'],
+                    label: 'SIEM', 
+                    items: ['Splunk', 'Alert Ingestion', 'SPL Queries'],
                     color: 'cyan'
                   },
                   { 
-                    label: 'DETECTION', 
-                    items: ['MITRE ATT&CK', 'Sigma Rules', 'IDS/IPS'],
+                    label: 'EDR', 
+                    items: ['CrowdStrike Falcon', 'Host Isolation', 'IOC Response'],
                     color: 'yellow'
                   },
                   { 
-                    label: 'CLOUD', 
-                    items: ['AWS', 'Azure', 'GCP Security'],
+                    label: 'SCRIPTING', 
+                    items: ['Python', 'REST APIs', 'Automation'],
                     color: 'purple'
                   },
                 ].map((category) => (
@@ -320,8 +320,8 @@ export default function HomePage() {
                 </h2>
                 
                 <p className="text-zinc-500 max-w-xl mx-auto">
-                  Looking for a security analyst who understands threat detection, 
-                  incident response, and SOAR automation? Open a secure channel.
+                  Looking for an XSOAR engineer who delivers security automation, 
+                  SOAR implementation, and incident response efficiency? Open a secure channel.
                 </p>
               </div>
 

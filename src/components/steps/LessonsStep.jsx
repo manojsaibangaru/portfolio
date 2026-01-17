@@ -51,16 +51,31 @@ export default function LessonsStep({ lessons }) {
         </div>
         <div className="space-y-2">
           {lessons.recommendations.map((rec, i) => (
-            <div key={i} className="flex items-center justify-between p-3 rounded-lg border border-zinc-800 bg-black/40">
-              <span className="text-zinc-300">{rec.item}</span>
-              <span className={`
-                px-2 py-0.5 rounded text-[10px]
-                ${rec.status === 'Implemented' ? 'bg-green-500/20 text-green-400' : ''}
-                ${rec.status === 'In Progress' ? 'bg-yellow-500/20 text-yellow-400' : ''}
-                ${rec.status === 'Planned' ? 'bg-blue-500/20 text-blue-400' : ''}
-              `}>
-                {rec.status}
-              </span>
+            <div key={i} className="p-3 rounded-lg border border-zinc-800 bg-black/40">
+              <div className="flex items-center justify-between mb-2">
+                <span className={`
+                  px-2 py-0.5 rounded text-[10px]
+                  ${rec.priority === 'Critical' ? 'bg-red-500/20 text-red-400' : ''}
+                  ${rec.priority === 'High' ? 'bg-orange-500/20 text-orange-400' : ''}
+                  ${rec.priority === 'Medium' ? 'bg-yellow-500/20 text-yellow-400' : ''}
+                  ${rec.priority === 'Low' ? 'bg-blue-500/20 text-blue-400' : ''}
+                `}>
+                  {rec.priority}
+                </span>
+                <span className={`
+                  px-2 py-0.5 rounded text-[10px]
+                  ${rec.status === 'Implemented' || rec.status === 'Completed' ? 'bg-green-500/20 text-green-400' : ''}
+                  ${rec.status === 'In Progress' ? 'bg-yellow-500/20 text-yellow-400' : ''}
+                  ${rec.status === 'Planned' || rec.status === 'Scheduled' ? 'bg-blue-500/20 text-blue-400' : ''}
+                  ${rec.status === 'Testing' || rec.status === 'Under Review' ? 'bg-purple-500/20 text-purple-400' : ''}
+                `}>
+                  {rec.status}
+                </span>
+              </div>
+              <div className="text-zinc-300 text-xs">{rec.action}</div>
+              {rec.owner && (
+                <div className="text-[10px] text-zinc-600 mt-1">Owner: {rec.owner}</div>
+              )}
             </div>
           ))}
         </div>

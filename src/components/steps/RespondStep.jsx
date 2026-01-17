@@ -30,16 +30,16 @@ export default function RespondStep({ respond }) {
           <span>RESPONSE_TIMELINE</span>
         </div>
         <div className="border-l border-zinc-800 pl-4 space-y-4">
-          {respond.actions.map((action, i) => (
+          {respond.timeline?.map((item, i) => (
             <div key={i} className="relative">
               <div className="absolute -left-[21px] top-1 w-3 h-3 rounded-full border border-zinc-700 bg-black" />
               <div className="flex items-center gap-3 mb-1">
-                <span className="text-green-400 text-xs">{action.time}</span>
-                {action.automated && (
+                <span className="text-green-400 text-xs">{item.time}</span>
+                {item.automated && (
                   <span className="px-2 py-0.5 rounded text-[9px] bg-green-500/20 text-green-400">AUTOMATED</span>
                 )}
               </div>
-              <p className="text-zinc-400">{action.description}</p>
+              <p className="text-zinc-400">{item.action}</p>
             </div>
           ))}
         </div>
@@ -56,14 +56,24 @@ export default function RespondStep({ respond }) {
             <span className="text-zinc-500">Platform: <span className="text-white">{respond.soar.platform}</span></span>
             <span className="text-zinc-500">Playbook: <span className="text-green-400">{respond.soar.playbook}</span></span>
           </div>
+          {/* Integrations */}
+          {respond.soar.integrations && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {respond.soar.integrations.map((integration, i) => (
+                <span key={i} className="px-2 py-1 rounded text-[10px] bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  {integration}
+                </span>
+              ))}
+            </div>
+          )}
           <div className="space-y-2">
-            {respond.soar.steps.map((step, i) => (
+            {respond.soar.automations?.map((automation, i) => (
               <div key={i} className="p-3 rounded border border-zinc-800 bg-black/40">
-                <div className="text-white mb-1">{step.name}</div>
-                <div className="text-xs text-zinc-500 mb-2">{step.description}</div>
-                {step.result && (
+                <div className="text-white mb-1">{automation.name}</div>
+                <div className="text-xs text-zinc-500 mb-2">{automation.description}</div>
+                {automation.result && (
                   <div className="text-[10px] text-green-400 bg-black/50 rounded p-2">
-                    → {step.result}
+                    → {automation.result}
                   </div>
                 )}
               </div>

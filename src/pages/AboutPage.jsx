@@ -10,8 +10,8 @@ import MatrixRain from '../components/MatrixRain.jsx'
 
 const ASCII_PROFILE = `
 ╔═══════════════════════════════════════════╗
-║           ANALYST PROFILE                  ║
-║           SECURITY CLEARANCE: GRANTED      ║
+║           ENGINEER PROFILE                 ║
+║           XSOAR IMPLEMENTATION             ║
 ╚═══════════════════════════════════════════╝
 `
 
@@ -42,12 +42,12 @@ export default function AboutPage() {
               <Link to="/scenarios" className="text-zinc-400 hover:text-green-400 transition-colors">
                 ./scenarios
               </Link>
-              <a
-                href={`mailto:${profile.contact.email}`}
+              <Link
+                to="/#contact"
                 className="px-4 py-1.5 rounded border border-green-500/50 text-green-400 hover:bg-green-500/10 transition-colors"
               >
                 --contact
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -94,11 +94,11 @@ export default function AboutPage() {
                     </div>
                     <div className="flex justify-between border-b border-zinc-800 pb-2">
                       <span className="text-zinc-600">ROLE</span>
-                      <span className="text-cyan-400">Security Analyst</span>
+                      <span className="text-cyan-400">XSOAR Engineer</span>
                     </div>
                     <div className="flex justify-between border-b border-zinc-800 pb-2">
-                      <span className="text-zinc-600">TIER</span>
-                      <span className="text-yellow-400">SOC II</span>
+                      <span className="text-zinc-600">FOCUS</span>
+                      <span className="text-yellow-400">SOAR Implementation</span>
                     </div>
                     <div className="flex justify-between border-b border-zinc-800 pb-2">
                       <span className="text-zinc-600">EXP</span>
