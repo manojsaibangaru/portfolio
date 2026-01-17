@@ -1,0 +1,7 @@
+# Allow indexing for the live portfolio.
+User-agent: *
+Allow: /
+
+# TODO: replace YOUR_DOMAIN after you go live.
+Sitemap: https://YOUR_DOMAIN/sitemap.xml
+
