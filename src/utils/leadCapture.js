@@ -30,7 +30,7 @@ export async function submitLead({ toEmail, name, email, company, message, conse
 
   if (!consent) return { ok: false, error: "Consent is required." }
 
-  const endpoint = import.meta.env.VITE_FORMSPREE_ENDPOINT
+  const endpoint = 'https://formspree.io/f/xvgklazo'
   const pageUrl = typeof window !== "undefined" ? window.location.href : ""
 
   if (endpoint) {

@@ -60,8 +60,8 @@ export default function ContactTerminal() {
     setStatus('sending')
 
     try {
-      // Using Formspree - replace with your form ID
-      const formspreeEndpoint = import.meta.env.VITE_FORMSPREE_ENDPOINT || 'https://formspree.io/f/YOUR_FORM_ID'
+      // Formspree endpoint for contact form
+      const formspreeEndpoint = 'https://formspree.io/f/xvgklazo'
       
       const response = await fetch(formspreeEndpoint, {
         method: 'POST',

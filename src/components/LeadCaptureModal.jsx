@@ -123,7 +123,7 @@ export default function LeadCaptureModal({
                 <span className="text-zinc-100">{toEmail}</span>
               </div>
               <div className="mt-2 terminal-muted">
-                SPAM_SHIELD: ARMED • DELIVERY: {import.meta.env.VITE_FORMSPREE_ENDPOINT ? "FORMSPREE" : "MAILTO_FALLBACK"}
+                SPAM_SHIELD: ARMED • DELIVERY: FORMSPREE
               </div>
               <div className="mt-2 text-[12px] text-zinc-400">
                 Tip: press <span className="text-zinc-200">ESC</span> to exit.
