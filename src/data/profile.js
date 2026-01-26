@@ -77,8 +77,8 @@ export const profile = {
   },
   experience: [
     {
-      title: "Cortex XSOAR Engineer — Johnson & Johnson",
-      location: "New Brunswick, New Jersey, USA",
+      title: "Cortex XSOAR Engineer — CVS",
+      location: "Irving, Texas, USA",
       dates: "October 2024 — Present",
       bullets: [
         "Leading Cortex XSOAR implementation and configuration within the enterprise SOC, establishing automated incident response capabilities across security operations.",
